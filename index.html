@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>click speed test</title>
+    </head>
+    <body>
+        <input type="text" value="zx" id="ff"/>
+        <input type="button" value="start" id="cl"/>
+        <div id="tt">
+            <div id = "ints"></div>
+            Average: <span id = "av"></span>ms<br/>
+            Sample deviation: <span id = "sd"></span>ms<br/>
+            BPM(1/4 Pattern): <span id = "bpm"></span>
+        </div>
+        <script>
+            var ex = new Uint8Array(128);
+            var pr = new Uint8Array(128);
+            var vlo = {clicks:[], cl: pr};
+            function start(){
+                cl.value = "stop";
+                /// remove focus from input
+                focus();
+                if (document.activeElement) {
+                    document.activeElement.blur();
+                }
+                /// ee
+                vlo.clicks=[];
+                let r = ff.value;
+                for(let i=0;i<128;++i) ex[i]=0;
+                for(let i=0;i<r.length;++i) ex[r.charCodeAt(i)]=1;
+                vlo.cl=ex;
+            }
+            function stop(){
+                cl.value = "start";
+                ff.disabled = false;
+                vlo.cl=pr;
+                console.log(vlo.clicks);
+                if(vlo.clicks.length > 0){
+                    let diff = [], sum = 0, sqsum = 0;
+                    let len = vlo.clicks.length;
+                    let sam = len-1;
+                    for(let i=1;i<len;++i){
+                        let c = vlo.clicks[i]-vlo.clicks[i-1];
+                        diff.push(c);
+                        sum += c;
+                        sqsum += c*c;
+                    }
+                    let avg = sum/sam;
+                    let tavg = sqsum/sam;
+                    let sdv = Math.sqrt(sam/(sam-1)*(tavg-avg*avg));
+                    av.innerHTML = avg.toFixed(5);
+                    sd.innerHTML = sdv.toFixed(5);
+                    bpm.innerHTML = (15000/avg).toFixed(3);
+                }
+            }
+            function swch(){
+                if(vlo.cl == pr) start(); else stop();
+            }
+            document.querySelector("body").addEventListener("keypress",(e)=>{
+                if(e.keyCode == 13){
+                    if(vlo.cl == pr) start(); else stop();
+                }else{
+                    if(vlo.cl != pr && e.charCode && ex[e.charCode])
+                        vlo.clicks.push(performance.now());
+                }
+            });
+            cl.addEventListener("click", swch);
+        </script>
+    </body>
+</html>
