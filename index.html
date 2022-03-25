@@ -9,8 +9,7 @@
             <div id = "ints"></div>
             Average: <span id = "av"></span>ms<br/>
             Sample deviation: <span id = "sd"></span>ms<br/>
-            Offset: <span id = "off"></span>ms<br/>
-            BPM(1/4 Pattern): <span id = "bpm"></span>
+            BPM(1/4 Pattern): <span id = "bp"></span>
         </div>
         <script>
             var ex = new Uint8Array(128);
@@ -30,34 +29,47 @@
                 for(let i=0;i<r.length;++i) ex[r.charCodeAt(i)]=1;
                 vlo.cl=ex;
             }
+            function minsqfit(xs, ys){
+                let sxx = 0, sx = 0, sxy = 0, sy = 0;
+                let len = xs.length;
+                for(let i=0;i<len;++i){
+                    let x=xs[i], y=ys[i];
+                    sxx += x*x;
+                    sx  += x;
+                    sxy += x*y;
+                    sy  += y;
+                }
+                let bd = (len*sxx-sx*sx);
+                let b0 = (sxx*sy - sx*sxy)/bd;
+                let b1 = (len*sxy- sx*sy )/bd;
+                let bpm= 15000/b1;
+                
+                let s1 = 0, s2 = 0;
+                for(let i=0;i<len;++i){
+                    let c = ys[i] - b0 - b1*xs[i];
+                    s1 += c;
+                    s2 += c*c;
+                }
+                s1 /= len;
+                s2 /= len;
+                let sdv = Math.sqrt(s2-s1*s2);
+                return [b1,bpm,sdv];
+            }
             function stop(){
                 cl.value = "start";
                 ff.disabled = false;
                 vlo.cl=pr;
                 console.log(vlo.clicks);
                 if(vlo.clicks.length > 0){
-                    let diff = [], sum = 0, sqsum = 0;
-                    let len = vlo.clicks.length;
-                    let sam = len-1;
-                    for(let i=1;i<len;++i){
-                        let c = vlo.clicks[i]-vlo.clicks[i-1];
-                        diff.push(c);
-                        sum += c;
+                    let xs = [], ys = [], len = vlo.clicks.length;
+                    for(let i=0;i<len;++i){
+                        xs.push(i);
+                        ys.push(vlo.clicks[i]-vlo.clicks[0]);
                     }
-                    let avg = sum/sam;
+                    let [avg, bpm, sdv] = minsqfit(xs,ys);
                     av.innerHTML = avg.toFixed(5);
-                    let asu = 0, asusq = 0, havg=avg/2;
-                    for(let i=1;i<len;++i){
-                        let c = (vlo.clicks[i]-vlo.clicks[0]+havg)%avg - havg;
-                        console.log(c);
-                        asu += c;
-                        asusq += c*c;
-                    }
-                    asu = asu/sam;
-                    let sdv = Math.sqrt(asusq/sam - asu*asu);
                     sd.innerHTML = sdv.toFixed(5);
-                    off.innerHTML = asu.toFixed(3);
-                    bpm.innerHTML = (15000/avg).toFixed(3);
+                    bp.innerHTML = bpm.toFixed(3);
                 }
             }
             function swch(){
