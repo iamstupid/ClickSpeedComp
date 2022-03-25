@@ -1,6 +1,6 @@
 <html>
     <head>
-        <title>click speed test</title>
+        <title>click speed determiner</title>
     </head>
     <body>
         <input type="text" value="zx" id="ff"/>
@@ -9,6 +9,7 @@
             <div id = "ints"></div>
             Average: <span id = "av"></span>ms<br/>
             Sample deviation: <span id = "sd"></span>ms<br/>
+            Offset: <span id = "off"></span>ms<br/>
             BPM(1/4 Pattern): <span id = "bpm"></span>
         </div>
         <script>
@@ -42,13 +43,20 @@
                         let c = vlo.clicks[i]-vlo.clicks[i-1];
                         diff.push(c);
                         sum += c;
-                        sqsum += c*c;
                     }
                     let avg = sum/sam;
-                    let tavg = sqsum/sam;
-                    let sdv = Math.sqrt(sam/(sam-1)*(tavg-avg*avg));
                     av.innerHTML = avg.toFixed(5);
+                    let asu = 0, asusq = 0, havg=avg/2;
+                    for(let i=1;i<len;++i){
+                        let c = (vlo.clicks[i]-vlo.clicks[0]+havg)%avg - havg;
+                        console.log(c);
+                        asu += c;
+                        asusq += c*c;
+                    }
+                    asu = asu/sam;
+                    let sdv = Math.sqrt(asusq/sam - asu*asu);
                     sd.innerHTML = sdv.toFixed(5);
+                    off.innerHTML = asu.toFixed(3);
                     bpm.innerHTML = (15000/avg).toFixed(3);
                 }
             }
